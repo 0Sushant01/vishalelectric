@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getComplaints, updateComplaintStatus } from '../api/complaints';
+import { logoutAdmin } from '../api/auth';
 import {
     BarChart3,
     Clock,
@@ -7,7 +9,8 @@ import {
     AlertCircle,
     Search,
     MoreVertical,
-    FileDown
+    FileDown,
+    LogOut
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -15,6 +18,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchComplaints();
@@ -42,25 +46,42 @@ const Dashboard = () => {
         }
     };
 
+    const handleLogout = async () => {
+        await logoutAdmin();
+        navigate('/owner-login');
+    };
+
     const getStatusConfig = (status) => {
         switch (status) {
-            case 'Pending':
+            case 'PENDING':
                 return {
                     bg: '#fffbeb',
                     text: '#b45309',
                     border: '#fde68a',
                 };
-            case 'In Progress':
+            case 'ASSIGNED':
+                return {
+                    bg: '#e0e7ff',
+                    text: '#4338ca',
+                    border: '#c7d2fe',
+                };
+            case 'IN_PROGRESS':
                 return {
                     bg: '#eff6ff',
                     text: '#1d4ed8',
                     border: '#bfdbfe',
                 };
-            case 'Completed':
+            case 'COMPLETED':
                 return {
                     bg: '#f0fdf4',
                     text: '#15803d',
                     border: '#bbf7d0',
+                };
+            case 'CLOSED':
+                return {
+                    bg: '#f1f5f9',
+                    text: '#475569',
+                    border: '#cbd5e1',
                 };
             default:
                 return {
@@ -84,9 +105,9 @@ const Dashboard = () => {
 
     const stats = {
         total: complaints.length,
-        pending: complaints.filter(c => c.status === 'Pending').length,
-        inProgress: complaints.filter(c => c.status === 'In Progress').length,
-        completed: complaints.filter(c => c.status === 'Completed').length,
+        pending: complaints.filter(c => c.status === 'PENDING').length,
+        inProgress: complaints.filter(c => c.status === 'IN_PROGRESS').length,
+        completed: complaints.filter(c => c.status === 'COMPLETED').length,
     };
 
     if (loading) return (
@@ -110,6 +131,10 @@ const Dashboard = () => {
                     <button className="btn btn-primary">
                         <BarChart3 size={18} />
                         <span>Reports</span>
+                    </button>
+                    <button className="btn btn-outline" onClick={handleLogout} style={{ color: '#ef4444', borderColor: '#fca5a5' }}>
+                        <LogOut size={18} />
+                        <span>Logout</span>
                     </button>
                 </div>
             </header>
@@ -173,9 +198,11 @@ const Dashboard = () => {
                         style={{ width: 'auto', marginBottom: 0, padding: '8px 12px' }}
                     >
                         <option value="All">All Status</option>
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CLOSED">Closed</option>
                     </select>
                 </div>
             </div>
@@ -185,10 +212,10 @@ const Dashboard = () => {
                 <table>
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Customer</th>
                             <th>Category</th>
                             <th>Contact</th>
-                            <th>Issue</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th></th>
@@ -205,7 +232,15 @@ const Dashboard = () => {
                             filteredComplaints.map((c) => {
                                 const config = getStatusConfig(c.status);
                                 return (
-                                    <tr key={c.id}>
+                                    <tr
+                                        key={c.id}
+                                        onClick={() => navigate(`/complaints/${c.id}`)}
+                                        style={{ cursor: 'pointer' }}
+                                        className="table-row-hover"
+                                    >
+                                        <td>
+                                            <div style={{ fontWeight: 600, color: '#64748b' }}>#{c.id}</div>
+                                        </td>
                                         <td>
                                             <div style={{ fontWeight: 600 }}>{c.customer_name}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.address}</div>
@@ -224,14 +259,10 @@ const Dashboard = () => {
                                             </span>
                                         </td>
                                         <td>{c.phone}</td>
-                                        <td style={{ maxWidth: '200px' }}>
-                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={c.issue_description}>
-                                                {c.issue_description}
-                                            </div>
-                                        </td>
                                         <td>
                                             <select
                                                 value={c.status}
+                                                onClick={(e) => e.stopPropagation()}
                                                 onChange={(e) => handleStatusChange(c.id, e.target.value)}
                                                 style={{
                                                     width: 'auto',
@@ -245,9 +276,11 @@ const Dashboard = () => {
                                                     borderRadius: '4px'
                                                 }}
                                             >
-                                                <option value="Pending">Pending</option>
-                                                <option value="In Progress">In Progress</option>
-                                                <option value="Completed">Completed</option>
+                                                <option value="PENDING">Pending</option>
+                                                <option value="ASSIGNED">Assigned</option>
+                                                <option value="IN_PROGRESS">In Progress</option>
+                                                <option value="COMPLETED">Completed</option>
+                                                <option value="CLOSED">Closed</option>
                                             </select>
                                         </td>
                                         <td>

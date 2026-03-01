@@ -4,7 +4,7 @@ from .models import User, OTP
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'phone_number', 'full_name')
+        fields = ('unique_id', 'role', 'phone_number', 'full_name')
 
 class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
@@ -29,3 +29,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     password = serializers.CharField(write_only=True)
+
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        refresh = self.token_class(attrs["refresh"])
+        
+        if "refresh" in data:
+            new_refresh = self.token_class(data["refresh"])
+            refresh_jti = new_refresh.payload["jti"]
+        else:
+            refresh_jti = refresh.payload["jti"]
+            
+        access_token = refresh.access_token
+        access_token["refresh_jti"] = refresh_jti
+        
+        data["access"] = str(access_token)
+        return data

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createComplaint } from '../api/complaints';
-import { Send, CheckCircle, AlertCircle, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
+import { logoutAdmin } from '../api/auth';
+import api from '../api/axios';
+import { Send, CheckCircle, AlertCircle, LogIn, UserPlus, ShieldCheck, LogOut } from 'lucide-react';
 import AuthModals from '../components/AuthModals';
 
 const RaiseComplaint = () => {
@@ -15,23 +17,53 @@ const RaiseComplaint = () => {
     });
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null); // 'success' | 'error' | null
+    const [errorMessage, setErrorMessage] = useState('');
     const [showSplash, setShowSplash] = useState(true);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
 
     useEffect(() => {
-        const phone = localStorage.getItem('userPhone');
-        if (phone) {
-            setIsLoggedIn(true);
-            setFormData(prev => ({ ...prev, phone: phone }));
-        }
+        const verifyAuth = async () => {
+            try {
+                const response = await api.get('accounts/auth-status/');
+                const data = response.data;
+
+                if (data.is_authenticated) {
+                    setIsLoggedIn(true);
+                    setFormData(prev => ({
+                        ...prev,
+                        phone: data.user.phone_number,
+                        customer_name: data.user.full_name || prev.customer_name
+                    }));
+                }
+            } catch (error) {
+                // Not authenticated
+                console.log("No active secure session found.");
+            }
+        };
+        verifyAuth();
+
+        const handleUnauthorized = () => {
+            setIsLoggedIn(false);
+            setFormData(prev => ({ ...prev, phone: '', customer_name: '' }));
+            setAuthModal({ isOpen: true, mode: 'login' });
+        };
+        window.addEventListener('unauthorized', handleUnauthorized);
 
         const timer = setTimeout(() => {
             setShowSplash(false);
         }, 3000); // 3 seconds splash
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('unauthorized', handleUnauthorized);
+        };
     }, []);
+
+    const handleLogout = async () => {
+        await logoutAdmin();
+        window.dispatchEvent(new Event('unauthorized'));
+    };
 
     const issueCategories = [
         'Repair',
@@ -49,18 +81,24 @@ const RaiseComplaint = () => {
         e.preventDefault();
         setLoading(true);
         setStatus(null);
+        setErrorMessage('');
         try {
             await createComplaint(formData);
             setStatus('success');
-            setFormData({
-                customer_name: '',
-                phone: localStorage.getItem('userPhone') || '',
+            setFormData(prev => ({
+                customer_name: prev.customer_name, // keep logged in context
+                phone: prev.phone,                 // keep logged in context
                 address: '',
                 issue_category: '',
                 issue_description: '',
-            });
+            }));
         } catch (error) {
             setStatus('error');
+            if (error.response && error.response.data && error.response.data.error) {
+                setErrorMessage(error.response.data.error);
+            } else {
+                setErrorMessage('Error submitting request. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -102,7 +140,7 @@ const RaiseComplaint = () => {
                     {status === 'error' && (
                         <div className="status-toast error">
                             <AlertCircle size={16} />
-                            <span>Error submitting request.</span>
+                            <span>{errorMessage}</span>
                         </div>
                     )}
 
@@ -117,6 +155,7 @@ const RaiseComplaint = () => {
                                 value={formData.customer_name}
                                 onChange={handleChange}
                                 required
+                                disabled={isLoggedIn}
                             />
                         </div>
 
@@ -176,14 +215,25 @@ const RaiseComplaint = () => {
 
                         <div className="form-footer">
                             {isLoggedIn ? (
-                                <button type="submit" className="btn-primary" disabled={loading}>
-                                    {loading ? 'Submitting...' : (
-                                        <>
-                                            <Send size={20} />
-                                            Submit Request
-                                        </>
-                                    )}
-                                </button>
+                                <div className="btn-group">
+                                    <button type="submit" className="btn-primary" disabled={loading}>
+                                        {loading ? 'Submitting...' : (
+                                            <>
+                                                <Send size={20} />
+                                                Submit Request
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={handleLogout}
+                                        style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                                    >
+                                        <LogOut size={18} />
+                                        Logout
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="btn-group">
                                     <button
@@ -215,7 +265,11 @@ const RaiseComplaint = () => {
                 initialMode={authModal.mode}
                 onAuthSuccess={(user) => {
                     setIsLoggedIn(true);
-                    setFormData(prev => ({ ...prev, phone: user.phone_number }));
+                    setFormData(prev => ({
+                        ...prev,
+                        phone: user.phone_number,
+                        customer_name: user.full_name || prev.customer_name
+                    }));
                 }}
             />
         </>

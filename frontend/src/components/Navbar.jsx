@@ -16,7 +16,7 @@ const Navbar = () => {
                         Raise Complaint
                     </NavLink>
                     <NavLink
-                        to="/dashboard"
+                        to="/owner_dashbord"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     >
                         Owner Dashboard

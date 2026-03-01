@@ -1,6 +1,6 @@
-# Vishal Electric - Shop Management System
+# Karthik Electrical - Shop Management System
 
-A full-stack internal record management system for Vishal Electric.
+A full-stack internal record management system for Karthik Electrical.
 
 ## Tech Stack
 - **Backend:** Django + Django REST Framework
@@ -13,7 +13,28 @@ A full-stack internal record management system for Vishal Electric.
 
 ## Getting Started
 
-### Backend Setup
+### Using Docker (Recommended)
+You can run the entire application (frontend, backend, database) seamlessly using Docker Compose.
+
+1. Ensure you have Docker and Docker Compose installed.
+2. From the root directory of the project, run:
+   ```bash
+   docker-compose up -d --build
+   ```
+3. The application will be up and running at:
+   - **Frontend:** http://localhost:80
+   - **Backend API:** http://localhost:8000
+
+To stop the application:
+```bash
+docker-compose down
+```
+
+---
+
+### Local Development Setup
+
+#### Backend Setup
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -37,7 +58,7 @@ A full-stack internal record management system for Vishal Electric.
    python manage.py runserver
    ```
 
-### Frontend Setup
+#### Frontend Setup
 1. Navigate to the frontend directory:
    ```bash
    cd frontend

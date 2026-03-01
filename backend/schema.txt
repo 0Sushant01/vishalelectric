@@ -1,0 +1,102 @@
+KARTHIK ELECTRICALS - COMPLETE DATABASE SCHEMA REFERENCE
+------------------------------------------------------
+
+1. USERS & AUTHENTICATION (Accounts App)
+----------------------------------------
+- accounts_user
+  [Contains ALL registered users/customers/technicians/admins] 
+  PK: id
+  Columns: id, phone_number, full_name, password, role, unique_id, is_active, is_staff, is_superuser, last_login, date_joined
+
+- accounts_otp
+  [Contains the 6-digit verification codes sent for login/registration]
+  PK: id
+  Columns: id, phone_number, code, created_at, is_verified
+
+- accounts_user_groups
+  [Maps `accounts_user` to Django's built-in `auth_group` table for permissions]
+  PK: id
+  FK: user_id -> accounts_user(id)
+  FK: group_id -> auth_group(id)
+  Columns: id, user_id, group_id
+
+- accounts_user_user_permissions
+  [Maps `accounts_user` to specific Django admin permissions]
+  PK: id
+  FK: user_id -> accounts_user(id)
+  FK: permission_id -> auth_permission(id)
+  Columns: id, user_id, permission_id
+
+2. COMPLAINTS & TICKETS (Complaints App)
+----------------------------------------
+- complaints_complaint
+  [Contains all service requests raised by customers]
+  PK: id
+  FK: customer_id -> accounts_user(id)
+  Columns: id, customer_id, address, issue_category, issue_description, status, charge, amount_paid, payment_mode, payment_update, created_at, updated_at
+
+3. JWT TOKEN MANAGEMENT (SimpleJWT Blacklist)
+---------------------------------------------
+- token_blacklist_outstandingtoken
+  [Contains ALL refresh tokens successfully issued to users during login]
+  PK: id
+  FK: user_id -> accounts_user(id)
+  Columns: id, token, created_at, expires_at, user_id, jti
+
+- token_blacklist_blacklistedtoken
+  [Contains revoked/logged-out refresh tokens to prevent reuse]
+  PK: id
+  FK: token_id -> token_blacklist_outstandingtoken(id)
+  Columns: id, blacklisted_at, token_id
+
+4. PERMISSIONS & ROLES (Django Built-in Auth)
+---------------------------------------------
+- auth_group
+  [Contains role groups (e.g., "Technicians", "Admins")]
+  PK: id
+  Columns: id, name
+
+- auth_group_permissions
+  [Maps groups to specific system permissions]
+  PK: id
+  FK: group_id -> auth_group(id)
+  FK: permission_id -> auth_permission(id)
+  Columns: id, group_id, permission_id
+
+- auth_permission
+  [Contains every action possible in the Django admin (e.g., "Can add user", "Can delete complaint")]
+  PK: id
+  FK: content_type_id -> django_content_type(id)
+  Columns: id, name, content_type_id, codename
+
+5. API TOKENS (Django REST Framework Built-in)
+----------------------------------------------
+- authtoken_token
+  [Standard DRF TokenAuthentication. NOT USED. We use SimpleJWT instead.]
+  PK: key
+  FK: user_id -> accounts_user(id)
+  Columns: key, created, user_id
+
+6. DJANGO ADMIN & UTILITY (Built-in)
+------------------------------------
+- django_content_type
+  [Django internal table that keeps track of the names of your models]
+  PK: id
+  Columns: id, app_label, model
+
+- django_admin_log
+  [History log of every action an admin takes inside the Django Admin dashboard]
+  PK: id
+  FK: content_type_id -> django_content_type(id)
+  FK: user_id -> accounts_user(id)
+  Columns: id, action_time, object_id, object_repr, action_flag, change_message, content_type_id, user_id
+
+- django_migrations
+  [Tracks which python migration files have been successfully applied to the database]
+  PK: id
+  Columns: id, app, name, applied
+
+- django_session
+  [Standard browser cookie sessions. Only used when logging into the Django Admin dashboard directly]
+  PK: session_key
+  Columns: session_key, session_data, expire_date

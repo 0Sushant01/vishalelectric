@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Smartphone, User, Lock, ArrowRight, CheckCircle, ShieldCheck } from 'lucide-react';
+import api from '../api/axios';
 
 const AuthModals = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) => {
     const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'otp'
@@ -33,24 +34,19 @@ const AuthModals = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) =
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://13.127.83.204:8000/api/accounts/register/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone_number: formData.phone_number,
-                    full_name: formData.full_name,
-                    password: formData.password,
-                    password_confirm: formData.password_confirm
-                })
+            const response = await api.post('accounts/register/', {
+                phone_number: formData.phone_number,
+                full_name: formData.full_name,
+                password: formData.password,
+                password_confirm: formData.password_confirm
             });
-            const data = await response.json();
-            if (response.ok) {
-                setMode('otp');
-            } else {
-                setError(Object.values(data).flat().join(', '));
-            }
+            setMode('otp');
         } catch (err) {
-            setError("Connection failed. Ensure backend is running.");
+            if (err.response && err.response.data) {
+                setError(Object.values(err.response.data).flat().join(', '));
+            } else {
+                setError("Connection failed. Ensure backend is running.");
+            }
         } finally {
             setLoading(false);
         }
@@ -61,25 +57,19 @@ const AuthModals = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) =
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://13.127.83.204:8000/api/accounts/verify-otp/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone_number: formData.phone_number,
-                    code: formData.otp_code
-                })
+            const response = await api.post('accounts/verify-otp/', {
+                phone_number: formData.phone_number,
+                code: formData.otp_code
             });
-            const data = await response.json();
-            if (response.ok) {
-                localStorage.setItem('userToken', data.token);
-                localStorage.setItem('userPhone', data.user.phone_number);
-                onAuthSuccess(data.user);
-                onClose();
-            } else {
-                setError(data.error || "Verification failed");
-            }
+            const data = response.data;
+            onAuthSuccess(data.user);
+            onClose();
         } catch (err) {
-            setError("Connection failed.");
+            if (err.response && err.response.data && err.response.data.error) {
+                setError(err.response.data.error);
+            } else {
+                setError("Verification failed or connection error.");
+            }
         } finally {
             setLoading(false);
         }
@@ -90,25 +80,19 @@ const AuthModals = ({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) =
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://13.127.83.204:8000/api/accounts/login/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone_number: formData.phone_number,
-                    password: formData.password
-                })
+            const response = await api.post('accounts/login/', {
+                phone_number: formData.phone_number,
+                password: formData.password
             });
-            const data = await response.json();
-            if (response.ok) {
-                localStorage.setItem('userToken', data.token);
-                localStorage.setItem('userPhone', data.user.phone_number);
-                onAuthSuccess(data.user);
-                onClose();
-            } else {
-                setError(data.error || "Invalid credentials");
-            }
+            const data = response.data;
+            onAuthSuccess(data.user);
+            onClose();
         } catch (err) {
-            setError("Connection failed.");
+            if (err.response && err.response.data && err.response.data.error) {
+                setError(err.response.data.error);
+            } else {
+                setError("Invalid credentials or connection error.");
+            }
         } finally {
             setLoading(false);
         }
