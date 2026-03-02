@@ -128,9 +128,9 @@ const Dashboard = () => {
                         <FileDown size={18} />
                         <span>Export CSV</span>
                     </button>
-                    <button className="btn btn-primary">
+                    <button className="btn btn-primary" onClick={() => navigate('/admin/analytics')}>
                         <BarChart3 size={18} />
-                        <span>Reports</span>
+                        <span>Analytics</span>
                     </button>
                     <button className="btn btn-outline" onClick={handleLogout} style={{ color: '#ef4444', borderColor: '#fca5a5' }}>
                         <LogOut size={18} />

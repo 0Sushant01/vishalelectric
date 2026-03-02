@@ -13,7 +13,7 @@ class ComplaintListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Complaint
-        fields = ['id', 'customer', 'customer_name', 'phone', 'address', 'issue_category', 'issue_description', 'status', 'created_at']
+        fields = ['id', 'customer', 'customer_name', 'phone', 'address', 'issue_category', 'issue_description', 'status', 'charge', 'amount_paid', 'created_at']
 
 class ComplaintDetailSerializer(serializers.ModelSerializer):
     customer = CustomerSerializer(read_only=True)

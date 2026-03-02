@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
 import RaiseComplaint from './pages/RaiseComplaint';
 import Home from './pages/Home';
 
@@ -33,6 +34,7 @@ function App() {
           <Route element={<Layout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="complaints/:id" element={<ComplaintDetail />} />
           </Route>
         </Route>
